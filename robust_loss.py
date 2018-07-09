@@ -4,8 +4,9 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 
+# diag means independent
 class criterion_diag( nn.Module ):
-    def __init__( self, ncls, ndf, fc, alp=0.1, moving_avg = False ):
+    def __init__( self, ncls, ndf, fc, alp=0.1, moving_avg = False, distribution='Gaussian' ):
         super().__init__()
         self.register_buffer( 'mean', torch.zeros((ncls, ndf)) )
         self.register_buffer( 'var', torch.zeros((ncls, ndf))  )
@@ -13,6 +14,9 @@ class criterion_diag( nn.Module ):
         self.ncls, self.ndf, self.alp = ncls, ndf, alp
         self.moving_avg = moving_avg
         self.fc = fc
+        self.distribution = distribution
+        if distribution not in ['Gaussian', 'Laplace', 'Poisson', 'Blankout']:
+            raise NotImplementedError('Only 4 corrupting distribution implemented')
 
     def forward( self, df, gt ):
         alp = self.alp
@@ -51,14 +55,23 @@ class criterion_diag( nn.Module ):
         df = df.view( df.size(0), ndf, 1 )
         Var = Var.view( Var.size(0), ndf, 1 )
         
-        score = torch.matmul( W, df ) + alp * 0.5 * torch.matmul( W**2, Var )
+        if self.distribution == 'Gaussian':
+            score = torch.matmul( W, df ) + alp * 0.5 * torch.matmul( W**2, Var )
+            z_k, _ = score.max(1)
+            score = score - z_k[:, None, :].expand( score.size() )
+            score = ((score.exp().sum(1)+1e-6).log() + z_k)
+        if self.distribution == 'Laplace':
+            score = torch.matmul( W, df ) 
+            score = score.exp() / (1 - alp * torch.matmul( W**2, Var/2))
+            score = (score.sum(1) + 1e-6).log()
+        if self.distribution == 'Poisson':
+            score = torch.matmul( W.exp() - 1, f).exp()
+            score = (score.sum(1) + 1e-6).log()
+        if self.distribution == 'Blankout':
+            score = alp + (1 -alp) * (torch.matmul( W, df ) * 1 / (1 - alp)).exp()
+            score = (score.sum(1) + 1e-6).log()
 
         #loss = score.exp().sum(1).log().mean()
-        """
-        z_k, _ = score.max(1)
-        score = score - z_k[:, None, :].expand( score.size() )
-        loss = ((score.exp().sum(1)+1e-6).log() + z_k).mean()
-        """
         return score
 
 class criterion_mat( nn.Module ):

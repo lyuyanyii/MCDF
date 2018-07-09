@@ -49,10 +49,11 @@ def worker( jobs_que, gpu_que, worker_id ):
 
 if __name__ == '__main__':
     jobs = []
-    for alpha in [0, 0.125, 0.5, 1]:
+    for alpha in [0.5]:
         for percent in [100]:
             for seed in [0]:
-                jobs.append('python3 main.py --arch Densenet124 --save-folder result/cifar10sub_seed{seed}/alpha_{alp}_percent_{per}_reducedim/ --lr 0.1 --dataset subcifar10 -b 64 --alpha {alp} --epoch 300 --sub-percent {per} --seed {seed} --reduce-dim'.format( alp=alpha, per=percent, seed=seed ))
+                for dis in ['Gaussian', 'Poisson', 'Laplace', 'Blankout']:
+                    jobs.append('python3 main.py --arch Densenet124 --save-folder result/cifar10sub_seed{seed}/alpha_{alp}_percent_{per}_{dis}/ --lr 0.1 --dataset subcifar10 -b 64 --alpha {alp} --epoch 300 --sub-percent {per} --seed {seed} --distribution {dis}'.format( alp=alpha, per=percent, seed=seed, dis=dis ))
 
     jobs_que = multiprocessing.Queue( len(jobs) )
     for i in jobs:

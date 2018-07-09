@@ -31,6 +31,7 @@ plt.grid(True)
 plt.xlabel('Alpha')
 plt.ylabel('Accuracy')
 plt.legend()
-plt.show()
 if args.save is not None:
     plt.savefig( args.save )
+plt.show()
+plt.close()

@@ -58,6 +58,7 @@ parser.add_argument( '--epoch', type=int )
 parser.add_argument( '--sub-percent', dest='sub_percent', type=int )
 parser.add_argument( '--seed', type=int )
 parser.add_argument( '--reduce-dim', dest='reduce_dim', action='store_true' )
+parser.add_argument( '--distribution', type=str, choices=['Gaussian', 'Laplace', 'Poisson', 'Blankout'], default='Gaussian' )
 
 class Env():
     def __init__(self, args):
@@ -181,7 +182,8 @@ class Env():
         ndf = model.module.ndf
         if not args.depen:
             self.criterion = robust_loss.criterion_diag( ncls, ndf, list(self.model.module.fc.parameters())[0], alp=args.alpha,
-                                                moving_avg=args.moving_avg )
+                                                moving_avg=args.moving_avg,
+                                                distribution=args.distribution, )
         else:
             self.criterion = robust_loss.criterion_mat( ncls, ndf, list(self.model.module.fc.parameters())[0], alp=args.alpha,
                                                 moving_avg=args.moving_avg )
@@ -256,9 +258,12 @@ class Env():
 
             if not self.args.disable_robust and self.it > 10:
                 score = self.criterion( feature, gt )
+                """
                 z_k, _ = score.max(1)
                 score = score - z_k[:, None, :].expand( score.size() )
                 loss = ((score.exp().sum(1)+1e-6).log() + z_k).mean()
+                """
+                loss = score.mean()
                 loss1 = self.criterion1( pred, gt )
             else:
                 loss = self.criterion1( pred, gt )
