@@ -59,6 +59,7 @@ parser.add_argument( '--sub-percent', dest='sub_percent', type=int )
 parser.add_argument( '--seed', type=int )
 parser.add_argument( '--reduce-dim', dest='reduce_dim', action='store_true' )
 parser.add_argument( '--distribution', type=str, choices=['Gaussian', 'Laplace', 'Poisson', 'Blankout'], default='Gaussian' )
+parser.add_argument( '--disable-dataaug', dest='disable_dataaug', action='store_true' )
 
 class Env():
     def __init__(self, args):
@@ -125,6 +126,9 @@ class Env():
                 transforms.ToTensor(),
                 normalize,
                 ])
+
+            if args.disable_dataaug:
+                train_transform = valid_transform
             
             train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                                     download=True, transform=train_transform)
@@ -144,6 +148,9 @@ class Env():
                 transforms.ToTensor(),
                 normalize,
                 ])
+
+            if args.disable_dataaug:
+                train_transform = valid_transform
             
             cifar10_train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                                     download=True, transform=train_transform)
