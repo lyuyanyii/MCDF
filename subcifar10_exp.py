@@ -26,6 +26,7 @@ def worker( jobs_que, gpu_que, worker_id ):
     while not jobs_que.empty():
         gpu_id = gpu_que.get()
         mem, usage = get_GPU_status( gpu_id, worker_id )
+        print(mem,usage)
         if 12000 - mem >= 3000 and usage < 50:
             try:
                 pid = os.fork()
