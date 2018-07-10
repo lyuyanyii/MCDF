@@ -12,9 +12,9 @@ def get_GPU_status( gpu_id:int, worker_id:int ):
     with open( status_file, 'r' ) as f:
         lines = f.readlines()
         status_info = lines[ 8 + gpu_id * 3 ]
-        gpu_mem, gpu_util = 0, 0
+        gpu_mem, gpu_util = -1, -1
         for i in status_info.split(' '):
-            if 'MiB' in i and gpu_mem == 0:
+            if 'MiB' in i and gpu_mem == -1:
                 gpu_mem = int(i.replace('MiB', ''))
             if '%' in i:
                 gpu_util = int(i.replace('%', ''))
