@@ -267,7 +267,7 @@ class Env():
         logger.info( log_str )
         self.save( accs.avg )
 
-    def load_dataset():
+    def load_dataset( self ):
         args = self.args
         if args.dataset =='mnist':
             train_dataset = datasets.mnist_dataset( args.data, train=True  )
@@ -301,8 +301,8 @@ class Env():
                                 download=True, transform=train_transform)
             valid_dataset = ds(root='./data', train=False,
                                 download=True, transform=valid_transform)
-        elif args.dataset == ['subcifar10', 'subcifar100']:
-            if args.dataset == 'cifar10':
+        elif args.dataset in ['subcifar10', 'subcifar100']:
+            if args.dataset == 'subcifar10':
                 ncls = 10
                 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                             std=[x/255.0 for x in [63.0, 62.1, 66.7]])
