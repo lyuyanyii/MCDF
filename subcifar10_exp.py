@@ -2,6 +2,7 @@ import os
 import multiprocessing
 import time
 
+
 def get_GPU_status( gpu_id:int, worker_id:int ):
     #assert (0 <= gpu_id and gpu_id <= 3)
     if not (0 <= gpu_id and gpu_id <= 3):
