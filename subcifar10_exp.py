@@ -12,6 +12,8 @@ def get_GPU_status( gpu_id:int, worker_id:int ):
     os.system( "nvidia-smi >> {}".format(status_file) )
     with open( status_file, 'r' ) as f:
         lines = f.readlines()
+        if len(lines) < 8:
+            return 0, 0
         status_info = lines[ 8 + gpu_id * 3 ]
         gpu_mem, gpu_util = -1, -1
         for i in status_info.split(' '):
@@ -51,11 +53,11 @@ def worker( jobs_que, gpu_que, worker_id ):
 
 if __name__ == '__main__':
     jobs = []
-    for alpha in [0.5]:
+    for alpha in [0, 0.125, 0.5, 1]:
         for percent in [100]:
             for seed in [0]:
-                for dis in ['Gaussian', 'Poisson', 'Laplace', 'Blankout']:
-                    jobs.append('python3 main.py --arch Densenet124 --save-folder result/cifar10sub_seed{seed}/alpha_{alp}_percent_{per}_{dis}/ --lr 0.1 --dataset subcifar10 -b 64 --alpha {alp} --epoch 300 --sub-percent {per} --seed {seed} --distribution {dis}'.format( alp=alpha, per=percent, seed=seed, dis=dis ))
+                for dis in ['Gaussian']:
+                    jobs.append('python3 main.py --arch Densenet124 --save-folder result/cifar100sub_seed{seed}/alpha_{alp}_percent_{per}_{dis}/ --lr 0.1 --dataset subcifar100 -b 64 --alpha {alp} --epoch 300 --sub-percent {per} --seed {seed} --distribution {dis}'.format( alp=alpha, per=percent, seed=seed, dis=dis ))
 
     jobs_que = multiprocessing.Queue( len(jobs) )
     for i in jobs:

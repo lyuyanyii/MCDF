@@ -4,7 +4,7 @@ import time
 import pickle
 import sys
 import numpy as np
-import cv2
+#import cv2
 import models
 import shutil
 import utils
@@ -273,7 +273,7 @@ class Env():
             train_dataset = datasets.mnist_dataset( args.data, train=True  )
             valid_dataset = datasets.mnist_dataset( args.data, train=False )
         elif args.dataset == ['cifar10', 'cifar100']:
-            if args.dataset == 'cifar10'
+            if args.dataset == 'cifar10':
                 ncls = 10
                 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                             std=[x/255.0 for x in [63.0, 62.1, 66.7]])
@@ -302,7 +302,7 @@ class Env():
             valid_dataset = ds(root='./data', train=False,
                                 download=True, transform=valid_transform)
         elif args.dataset == ['subcifar10', 'subcifar100']:
-            if args.dataset == 'cifar10'
+            if args.dataset == 'cifar10':
                 ncls = 10
                 normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                             std=[x/255.0 for x in [63.0, 62.1, 66.7]])
