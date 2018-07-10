@@ -17,7 +17,8 @@ class subdataset( data.Dataset ):
         self.a, self.b = a, b
         np.random.seed(seed)
         self.mapping = np.arange(0, b - a)
-        np.random.shuffle( self.mapping )
+        if seed != -1:
+            np.random.shuffle( self.mapping )
 
     def __len__(self):
         return self.b - self.a

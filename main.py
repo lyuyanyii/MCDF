@@ -37,7 +37,7 @@ parser.add_argument( '--lr', type=float, help='initial learning rate' )
 #parser.add_argument( '--lr-step', type=float, help='lr will be decayed at these steps' )
 #parser.add_argument( '--lr-decay', type=float, help='lr decayed rate' )
 parser.add_argument( '--data', type=str, help='the directory of data' )
-parser.add_argument( '--dataset', type=str, choices=['mnist', 'cifar10', 'imgnet', 'subcifar10'] )
+parser.add_argument( '--dataset', type=str, choices=['mnist', 'cifar10', 'imgnet', 'subcifar10', 'cifar100', 'subcifar100'] )
 parser.add_argument( '--tot-iter', type=int, help='total number of iterations' )
 #parser.add_argument( '--val-iter', type=int, help='do validation every val-iter steps' )
 parser.add_argument( '--workers', type=int, default=4, help='number of data loading workers (default:4)' )
@@ -74,9 +74,12 @@ class Env():
         for key, value in sorted( vars(args).items() ):
             logger.info( str(key) + ': ' + str(value) )
 
+        self.load_dataset()
+
         model = getattr(models, args.arch)( sto_depth=args.sto_depth,
                                             pretrained=args.pretrained,
-                                            reduce_dim=args.reduce_dim, )
+                                            reduce_dim=args.reduce_dim,
+                                            ncls=self.ncls, )
         model = torch.nn.DataParallel( model ).cuda()
 
         """
@@ -109,84 +112,9 @@ class Env():
             else:
                 raise Exception("No checkpoint found. Check your resume path.")
 
-        if args.dataset =='mnist':
-            train_dataset = datasets.mnist_dataset( args.data, train=True  )
-            valid_dataset = datasets.mnist_dataset( args.data, train=False )
-        elif args.dataset == 'cifar10':
-            ncls = 10
-            normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
-                                            std=[x/255.0 for x in [63.0, 62.1, 66.7]])
-            train_transform = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-                ])
-            valid_transform = transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-                ])
-
-            if args.disable_dataaug:
-                train_transform = valid_transform
-            
-            train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                    download=True, transform=train_transform)
-            valid_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                                    download=True, transform=valid_transform)
-        elif args.dataset == 'subcifar10':
-            ncls = 10
-            normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
-                                            std=[x/255.0 for x in [63.0, 62.1, 66.7]])
-            train_transform = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-                ])
-            valid_transform = transforms.Compose([
-                transforms.ToTensor(),
-                normalize,
-                ])
-
-            if args.disable_dataaug:
-                train_transform = valid_transform
-            
-            cifar10_train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                    download=True, transform=train_transform)
-            cifar10_valid_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                                    download=True, transform=valid_transform)
-            tot_size = 45000
-            size = tot_size // 100 * args.sub_percent
-            train_dataset = datasets.subdataset( cifar10_train_dataset, 0, size, args.seed )
-            valid_dataset = datasets.subdataset( cifar10_valid_dataset, 45000, 50000, args.seed )
-        elif args.dataset == 'imgnet':
-            ncls = 1000
-            args.data = '/scratch/datasets/imagenet/'
-            traindir = os.path.join(args.data, 'train')
-            valdir = os.path.join(args.data, 'val')
-            normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                            std=[0.229, 0.224, 0.225])
-            train_dataset = torchvision.datasets.ImageFolder(
-                traindir,
-                transforms.Compose([
-                    transforms.RandomResizedCrop(224),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    normalize,
-                ]))
-            valid_dataset = torchvision.datasets.ImageFolder(
-                valdir,
-                transforms.Compose([
-                    transforms.Resize(256),
-                    transforms.CenterCrop(224),
-                    transforms.ToTensor(),
-                    normalize,
-                ]))
-        else:
-            raise NotImplementedError('Dataset has not been implemented')
-
         ndf = model.module.ndf
+        ncls = self.ncls
+        train_dataset, valid_dataset = self.train_dataset, self.valid_dataset
         if not args.depen:
             self.criterion = robust_loss.criterion_diag( ncls, ndf, list(self.model.module.fc.parameters())[0], alp=args.alpha,
                                                 moving_avg=args.moving_avg,
@@ -249,7 +177,7 @@ class Env():
                     for group in self.optimizer.param_groups:
                         group['lr'] *= 0.1
             if 'cifar10' in self.args.dataset:
-                if epoch == 150 or epoch == 225:
+                if epoch == self.args.epoch // 2 or epoch == self.args.epoch // 4 * 3:
                     for group in self.optimizer.param_groups:
                         group['lr'] *= 0.1
         
@@ -338,6 +266,100 @@ class Env():
         log_str = "VAL FINAL -> Accuracy: {}".format( accs.avg )
         logger.info( log_str )
         self.save( accs.avg )
+
+    def load_dataset():
+        args = self.args
+        if args.dataset =='mnist':
+            train_dataset = datasets.mnist_dataset( args.data, train=True  )
+            valid_dataset = datasets.mnist_dataset( args.data, train=False )
+        elif args.dataset == ['cifar10', 'cifar100']:
+            if args.dataset == 'cifar10'
+                ncls = 10
+                normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
+                                            std=[x/255.0 for x in [63.0, 62.1, 66.7]])
+                ds = torchvision.datasets.CIFAR10
+            else:
+                ncls = 100
+                normalize = transforms.Normalize(mean=[0.4914, 0.4824, 0.4467],
+                                                std=[0.2471, 0.2435, 0.2616])
+                ds = torchvision.datasets.CIFAR100
+            train_transform = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+                ])
+            valid_transform = transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+                ])
+
+            if args.disable_dataaug:
+                train_transform = valid_transform
+            
+            train_dataset = ds(root='./data', train=True,
+                                download=True, transform=train_transform)
+            valid_dataset = ds(root='./data', train=False,
+                                download=True, transform=valid_transform)
+        elif args.dataset == ['subcifar10', 'subcifar100']:
+            if args.dataset == 'cifar10'
+                ncls = 10
+                normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
+                                            std=[x/255.0 for x in [63.0, 62.1, 66.7]])
+                ds = torchvision.datasets.CIFAR10
+            else:
+                ncls = 100
+                normalize = transforms.Normalize(mean=[0.4914, 0.4824, 0.4467],
+                                                std=[0.2471, 0.2435, 0.2616])
+                ds = torchvision.datasets.CIFAR100
+            train_transform = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+                ])
+            valid_transform = transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+                ])
+
+            if args.disable_dataaug:
+                train_transform = valid_transform
+            
+            cifar10_train_dataset = ds(root='./data', train=True,
+                                        download=True, transform=train_transform)
+            cifar10_valid_dataset = ds(root='./data', train=True,
+                                        download=True, transform=valid_transform)
+            tot_size = 45000
+            size = tot_size // 100 * args.sub_percent
+            train_dataset = datasets.subdataset( cifar10_train_dataset, 0, size, args.seed )
+            valid_dataset = datasets.subdataset( cifar10_valid_dataset, 45000, 50000, args.seed )
+        elif args.dataset == 'imgnet':
+            ncls = 1000
+            args.data = '/scratch/datasets/imagenet/'
+            traindir = os.path.join(args.data, 'train')
+            valdir = os.path.join(args.data, 'val')
+            normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                            std=[0.229, 0.224, 0.225])
+            train_dataset = torchvision.datasets.ImageFolder(
+                traindir,
+                transforms.Compose([
+                    transforms.RandomResizedCrop(224),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    normalize,
+                ]))
+            valid_dataset = torchvision.datasets.ImageFolder(
+                valdir,
+                transforms.Compose([
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    normalize,
+                ]))
+        else:
+            raise NotImplementedError('Dataset has not been implemented')
+        self.ncls, self.train_dataset, self.valid_dataset = ncls, train_dataset, valid_dataset
 
 if __name__ == '__main__':
     args = parser.parse_args()
