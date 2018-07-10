@@ -2,7 +2,7 @@ import torch
 import torch.utils.data as data
 import numpy
 import random
-import cv2
+#import cv2
 import sys
 import torch.nn.functional as F
 import gzip

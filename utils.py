@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import shutil
-import cv2
+#import cv2
 import numpy as np
 
 from torch.autograd import Function, Variable
