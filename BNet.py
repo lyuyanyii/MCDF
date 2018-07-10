@@ -49,7 +49,7 @@ class Transition(nn.Module):
         return x
 
 class Cls(nn.Module):
-    def __init__( self, growth_rate = 12, layers = [10, 10, 10], bn_size = 4, reduce_dim=False ):
+    def __init__( self, growth_rate = 12, layers = [10, 10, 10], bn_size = 4, reduce_dim=False, ncls=10 ):
         super().__init__()
 
         self.conv1 = nn.Conv2d( 3, growth_rate * 2, 3, stride = 1, padding = 1 )
@@ -64,13 +64,13 @@ class Cls(nn.Module):
 
         self.reduce_dim = reduce_dim
         if not reduce_dim:
-            self.fc = nn.Linear( self.chl3, 10 )
+            self.fc = nn.Linear( self.chl3, ncls )
         else:
             self.fc1 = nn.Sequential(
                 nn.ReLU(True), 
                 nn.Linear( self.chl3, 64 ),
                 )
-            self.fc = nn.Linear( 64, 10 )
+            self.fc = nn.Linear( 64, ncls )
 
         self.apply( weight_init )
 

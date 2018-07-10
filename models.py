@@ -17,8 +17,8 @@ def Res110( sto_depth, **kwargs ):
 def Densenet( **kwargs ):
     return BNet.Cls()
 
-def Densenet124( reduce_dim=False, **kwargs ):
-    return BNet.Cls( layers=[10,20,30], reduce_dim=reduce_dim )
+def Densenet124( reduce_dim=False, ncls=10, **kwargs ):
+    return BNet.Cls( layers=[10,20,30], reduce_dim=reduce_dim, ncls=ncls )
 
 def VGG( **kwargs ):
     return VGG_CIFAR.Cls()
