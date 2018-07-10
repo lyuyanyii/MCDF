@@ -69,11 +69,17 @@ if __name__ == '__main__':
         p = multiprocessing.Process(target=worker,args=(jobs_que,gpu_que,i))
         p.start()
         p_list.append( p )
-
-    for p in p_list:
-        p.join()
-    print("Finish")
-
+    try:
+        for p in p_list:
+            p.join()
+        print("Finish")
+    except KeyboardInterrupt:
+        for p in p_list:
+            p.terminate()
+            p.join()
+        print("Keyboard interrupt in subcifar")
+    finally:
+        print("-------Cleaning up Main-------")
     jobs_que.close()
     gpu_que.close()
 
