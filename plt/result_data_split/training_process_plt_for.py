@@ -5,7 +5,7 @@ alphas = [0, 0.125, 0.5, 1]
 
 accs = []
 for alpha in alphas:
-    with open("../../result/cifar10sub_seed1/alpha_{}_percent_100/log.log".format(alpha), 'r') as f:
+    with open("../../result/cifar10sub/alpha_{}_percent_100/log.log".format(alpha), 'r') as f:
         lines = f.readlines()
         s = []
         for line in lines:
@@ -17,16 +17,17 @@ for alpha in alphas:
         plt.plot( range(len(s)), s, label='alp={}'.format(alpha) )
         """
         acc = np.array(s[-10: -1]).mean()
-        accs.append( int((1-acc)*10000)/100 )
+        accs.append( (1-acc) )
 
 x = range(len(accs))
-width = 1/1.5
+plt.grid(True)
 plt.xlabel('Alpha')
-plt.ylabel('Error rate')
-plt.bar( x, accs, width, tick_label = [0, 0.125, 0.5, 1] )
-for i, v in enumerate(accs):
-    plt.text( i-0.1, v+0.05, str(v) , color='red')
-plt.savefig( 'seed_1.png' )
+plt.ylabel('Error')
+plt.title( 'Cifar10_split2' )
+plt.plot( alphas, accs, label='D124_K12' )
+#for i, v in enumerate(accs):
+#    plt.text( i-0.1, v+0.05, str(v) , color='red')
+plt.savefig( 'split_defualt.pdf' )
 plt.show()
 """
 plt.grid(True)

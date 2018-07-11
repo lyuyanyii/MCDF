@@ -8,6 +8,7 @@ for i in range(10):
     parser.add_argument( '--name{}'.format(i), type=str, help='name' )
 parser.add_argument( '--save', type=str )
 parser.add_argument( '--smooth', type=int, default=10 )
+parser.add_argument( '--title', type=str )
 
 args = parser.parse_args()
 for i in range(10):
@@ -20,7 +21,7 @@ for i in range(10):
         s = []
         for line in lines:
             if 'VAL FINAL' in line:
-                s.append( float(line.split(" ")[-1]) )
+                s.append( 1-float(line.split(" ")[-1]) )
             if 'Dims' in line:
                 s = []
         T = args.smooth
@@ -29,9 +30,10 @@ for i in range(10):
 
 plt.grid(True)
 plt.xlabel('Alpha')
-plt.ylabel('Accuracy')
+plt.ylabel('Error')
+plt.title( args.title )
 plt.legend()
 if args.save is not None:
-    plt.savefig( args.save )
+    plt.savefig( args.save, format='pdf' )
 plt.show()
 plt.close()
