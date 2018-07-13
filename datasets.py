@@ -15,7 +15,8 @@ class subdataset( data.Dataset ):
     def __init__(self, dataset, a, b, seed):
         self.dataset = dataset
         self.a, self.b = a, b
-        np.random.seed(seed)
+        if seed != -1:
+            np.random.seed(seed)
         self.mapping = np.arange(0, b - a)
         if seed != -1:
             np.random.shuffle( self.mapping )
