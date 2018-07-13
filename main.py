@@ -204,6 +204,8 @@ class Env():
                 loss = self.criterion1( pred, gt )
             losses.update( loss.data[0], inp.size(0) )
             loss.backward()
+            if np.isnan( loss.data[0] ):
+                raise Exception("Training model diverges.")
             self.optimizer.step()
             if self.it % self.args.print_freq == 0:
                 log_str = 'TRAIN -> Iter:{iter}\t Loss:{loss.val:.5f} ({loss.avg:.5f})'.format( iter=self.it, loss=losses )
