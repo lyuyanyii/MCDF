@@ -60,6 +60,8 @@ parser.add_argument( '--seed', type=int )
 parser.add_argument( '--reduce-dim', dest='reduce_dim', action='store_true' )
 parser.add_argument( '--distribution', type=str, choices=['Gaussian', 'Laplace', 'Poisson', 'Blankout'], default='Gaussian' )
 parser.add_argument( '--disable-dataaug', dest='disable_dataaug', action='store_true' )
+parser.add_argument( '--enable-time', type=int, default=0, help="Time (epoch) to turn on robust loss" )
+parser.add_argument( '--not-class-conditioned', dest='ncc', action='store_true' )
 
 class Env():
     def __init__(self, args):
@@ -118,7 +120,8 @@ class Env():
         if not args.depen:
             self.criterion = robust_loss.criterion_diag( ncls, ndf, list(self.model.module.fc.parameters())[0], alp=args.alpha,
                                                 moving_avg=args.moving_avg,
-                                                distribution=args.distribution, )
+                                                distribution=args.distribution, 
+                                                class_conditioned=not args.ncc, )
         else:
             self.criterion = robust_loss.criterion_mat( ncls, ndf, list(self.model.module.fc.parameters())[0], alp=args.alpha,
                                                 moving_avg=args.moving_avg )
@@ -191,7 +194,7 @@ class Env():
 
             pred, feature = self.model( inp )
 
-            if not self.args.disable_robust and self.it > 10:
+            if not self.args.disable_robust and self.it > 10 and epoch > self.args.enable_time:
                 score = self.criterion( feature, gt )
                 """
                 z_k, _ = score.max(1)

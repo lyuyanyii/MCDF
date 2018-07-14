@@ -6,7 +6,7 @@ import numpy as np
 
 # diag means independent
 class criterion_diag( nn.Module ):
-    def __init__( self, ncls, ndf, fc, alp=0.1, moving_avg = False, distribution='Gaussian' ):
+    def __init__( self, ncls, ndf, fc, alp=0.1, moving_avg = False, distribution='Gaussian', class_conditioned=True ):
         super().__init__()
         self.register_buffer( 'mean', torch.zeros((ncls, ndf)) )
         self.register_buffer( 'var', torch.zeros((ncls, ndf))  )
@@ -15,6 +15,7 @@ class criterion_diag( nn.Module ):
         self.moving_avg = moving_avg
         self.fc = fc
         self.distribution = distribution
+        self.class_conditioned = class_conditioned
         if distribution not in ['Gaussian', 'Laplace', 'Poisson', 'Blankout']:
             raise NotImplementedError('Only 4 corrupting distribution implemented')
 
@@ -26,6 +27,8 @@ class criterion_diag( nn.Module ):
             for i in range(df.size(0)):
                 f = df[i].detach()
                 t = gt[i]
+                if not self.class_conditioned:
+                    t = 0
                 it = self.it[t]
                 self.it[t] += 1
                 if self.moving_avg:
@@ -41,6 +44,9 @@ class criterion_diag( nn.Module ):
                     self.var[t] = self.var[t] * c1 + a * c2
                 else:
                     self.var[t] = self.var[t] * c1 + a * c1 * c2
+            if not self.class_conditioned:
+                for i in range(self.ncls):
+                    self.mean[i], self.var[i] = self.mean[0], self.var[0]
         fc = fc.transpose( 0, 1 )
         # (minibatch_size * ndf)
         Var = self.var[ gt ]
