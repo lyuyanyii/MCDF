@@ -29,7 +29,7 @@ for i in range(10):
         plt.plot( range(len(s)), s, label=name )
 
 plt.grid(True)
-plt.xlabel('Alpha')
+plt.xlabel('Epoch')
 plt.ylabel('Error')
 plt.title( args.title )
 plt.legend()

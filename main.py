@@ -62,6 +62,7 @@ parser.add_argument( '--distribution', type=str, choices=['Gaussian', 'Laplace',
 parser.add_argument( '--disable-dataaug', dest='disable_dataaug', action='store_true' )
 parser.add_argument( '--enable-time', type=int, default=0, help="Time (epoch) to turn on robust loss" )
 parser.add_argument( '--not-class-conditioned', dest='ncc', action='store_true' )
+parser.add_argument( '--dgx', action='store_true' )
 
 class Env():
     def __init__(self, args):
@@ -342,6 +343,8 @@ class Env():
         elif args.dataset == 'imgnet':
             ncls = 1000
             args.data = '/scratch/datasets/imagenet/'
+            if args.dgx:
+                args.data = '/home/gh349/datasets/imagenet/'
             traindir = os.path.join(args.data, 'train')
             valdir = os.path.join(args.data, 'val')
             normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
