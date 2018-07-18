@@ -34,6 +34,6 @@ plt.ylabel('Error')
 plt.title( args.title )
 plt.legend()
 if args.save is not None:
-    plt.savefig( args.save, format='pdf' )
+    plt.savefig( args.save, format='png' )
 plt.show()
 plt.close()
